@@ -6,7 +6,7 @@ const { spawn } = require("child_process");
 const startBackend = () => {
   console.log("🚀 Starting CodeHire Backend...");
   
-  const ls = spawn("npm", ["run", "start", "--prefix", "backend"], {
+  const ls = spawn("node", ["backend/src/server.js"], {
     shell: true,
     stdio: "inherit",
   });
