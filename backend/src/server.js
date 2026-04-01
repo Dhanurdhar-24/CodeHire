@@ -13,7 +13,7 @@ import sessionRoutes from "./routes/sessionRoute.js";
 
 const app = express();
 
-const __dirname = path.resolve();
+const __dirname = process.cwd();
 
 // middleware
 app.use(express.json());
@@ -31,17 +31,20 @@ app.get("/health", (req, res) => {
 
 // make our app ready for deployment
 if (ENV.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "frontend", "dist")));
+  const staticPath = path.join(__dirname, "frontend", "dist");
+  console.log("📁 Serving static files from:", staticPath);
+  app.use(express.static(staticPath));
 
-  app.use((req, res) => {
-    res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(staticPath, "index.html"));
   });
 }
 
 const startServer = async () => {
   try {
     await connectDB();
-    app.listen(ENV.PORT, () => console.log("Server is running on port:", ENV.PORT));
+    console.log("🌍 Node Environment:", ENV.NODE_ENV);
+    app.listen(ENV.PORT, () => console.log("🚀 Server is running on port:", ENV.PORT));
   } catch (error) {
     console.error("💥 Error starting the server", error);
   }
