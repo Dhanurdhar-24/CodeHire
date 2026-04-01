@@ -6,8 +6,8 @@
     "frontend"
   ],
   "scripts": {
-    "build": "npm install && npm run build -w frontend && cp -r frontend/dist backend/dist",
-    "start": "node index.js"
+    "dev-backend": "npm run dev --prefix backend",
+    "dev-frontend": "npm run dev --prefix frontend"
   },
   "dependencies": {
     "@clerk/express": "^1.7.41",

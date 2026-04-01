@@ -25,20 +25,10 @@ app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/chat", chatRoutes);
 app.use("/api/sessions", sessionRoutes);
 
-app.get("/health", (req, res) => {
-  res.status(200).json({ msg: "api is up and running" });
+// Standard API health check
+app.get("/", (req, res) => {
+  res.status(200).json({ msg: "CodeHire API is up and running" });
 });
-
-// make our app ready for deployment
-if (ENV.NODE_ENV === "production") {
-  const staticPath = path.join(__dirname, "frontend", "dist");
-  console.log("📁 Serving static files from:", staticPath);
-  app.use(express.static(staticPath));
-
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(staticPath, "index.html"));
-  });
-}
 
 const startServer = async () => {
   try {
