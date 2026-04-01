@@ -1,8 +1,12 @@
 {
   "name": "code-hire",
   "version": "1.0.0",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
-    "build": "npm install && npm install --prefix frontend && npm run build --prefix frontend && cp -r frontend/dist backend/dist",
+    "build": "npm install && npm run build -w frontend && cp -r frontend/dist backend/dist",
     "start": "node index.js"
   },
   "dependencies": {
