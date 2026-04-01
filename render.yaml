@@ -16,7 +16,6 @@ services:
         sync: false
       - key: CLERK_SECRET_KEY
         sync: false
-        generateValue: true
       - key: STREAM_API_KEY
         sync: false
       - key: STREAM_API_SECRET
