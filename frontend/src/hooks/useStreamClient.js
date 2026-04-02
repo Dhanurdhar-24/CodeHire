@@ -17,8 +17,13 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
 
     const initCall = async () => {
       if (!session?.callId) return;
-      if (!isHost && !isParticipant) return;
       if (session.status === "completed") return;
+
+      // Wait for the user's role in the session to be determined
+      // isHost and isParticipant are derived from session data, so if neither
+      // is true yet, the session may not have loaded the participant yet
+      const userIsInSession = isHost || isParticipant || session?.participant == null;
+      if (!userIsInSession) return;
 
       try {
         const { token, userId, userName, userImage } = await sessionApi.getStreamToken();
