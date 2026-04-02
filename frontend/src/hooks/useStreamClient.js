@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { StreamChat } from "stream-chat";
 import toast from "react-hot-toast";
 import { initializeStreamClient, disconnectStreamClient } from "../lib/stream";
@@ -10,48 +10,54 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
   const [chatClient, setChatClient] = useState(null);
   const [channel, setChannel] = useState(null);
   const [isInitializingCall, setIsInitializingCall] = useState(true);
+  const initialized = useRef(false);
 
   useEffect(() => {
+    // If session hasn't loaded yet, keep waiting
+    if (loadingSession || !session) return;
+
+    // If already initialized, don't re-initialize
+    if (initialized.current) return;
+
+    // If session has no callId, nothing to init
+    if (!session?.callId) {
+      setIsInitializingCall(false);
+      return;
+    }
+
+    // If session is completed, no need to init
+    if (session.status === "completed") {
+      setIsInitializingCall(false);
+      return;
+    }
+
     let videoCall = null;
     let chatClientInstance = null;
 
     const initCall = async () => {
-      if (!session?.callId) return;
-      if (session.status === "completed") return;
-
-      // Wait for the user's role in the session to be determined
-      // isHost and isParticipant are derived from session data, so if neither
-      // is true yet, the session may not have loaded the participant yet
-      const userIsInSession = isHost || isParticipant || session?.participant == null;
-      if (!userIsInSession) return;
-
       try {
+        setIsInitializingCall(true);
+        initialized.current = true;
+
         const { token, userId, userName, userImage } = await sessionApi.getStreamToken();
+        console.log("Stream token fetched for:", userId);
 
         const client = await initializeStreamClient(
-          {
-            id: userId,
-            name: userName,
-            image: userImage,
-          },
+          { id: userId, name: userName, image: userImage },
           token
         );
-
         setStreamClient(client);
 
         videoCall = client.call("default", session.callId);
         await videoCall.join({ create: true });
         setCall(videoCall);
+        console.log("Joined video call:", session.callId);
 
         const apiKey = import.meta.env.VITE_STREAM_API_KEY;
         chatClientInstance = StreamChat.getInstance(apiKey);
 
         await chatClientInstance.connectUser(
-          {
-            id: userId,
-            name: userName,
-            image: userImage,
-          },
+          { id: userId, name: userName, image: userImage },
           token
         );
         setChatClient(chatClientInstance);
@@ -59,19 +65,19 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
         const chatChannel = chatClientInstance.channel("messaging", session.callId);
         await chatChannel.watch();
         setChannel(chatChannel);
+        console.log("Connected to chat channel:", session.callId);
       } catch (error) {
-        toast.error("Failed to join video call");
-        console.error("Error init call", error);
+        console.error("Stream initialization error:", error.message, error);
+        toast.error("Failed to connect to video call: " + error.message);
+        initialized.current = false; // allow retry
       } finally {
         setIsInitializingCall(false);
       }
     };
 
-    if (session && !loadingSession) initCall();
+    initCall();
 
-    // cleanup - performance reasons
     return () => {
-      // iife
       (async () => {
         try {
           if (videoCall) await videoCall.leave();
@@ -82,15 +88,9 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
         }
       })();
     };
-  }, [session, loadingSession, isHost, isParticipant]);
+  }, [session?.callId, loadingSession]);
 
-  return {
-    streamClient,
-    call,
-    chatClient,
-    channel,
-    isInitializingCall,
-  };
+  return { streamClient, call, chatClient, channel, isInitializingCall };
 }
 
 export default useStreamClient;
