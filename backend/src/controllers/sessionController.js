@@ -1,4 +1,4 @@
-import { chatClient, streamClient } from "../lib/stream.js";
+import { chatClient, streamClient, upsertStreamUser } from "../lib/stream.js";
 import Session from "../models/Session.js";
 
 export async function createSession(req, res) {
@@ -36,6 +36,13 @@ export async function createSession(req, res) {
       currentProblemIndex: 0 
     });
 
+    // 0. Ensure user is synced with Stream
+    await upsertStreamUser({
+      id: clerkId,
+      name: req.user.name,
+      image: req.user.profileImage,
+    });
+
     // create stream video call
     await streamClient.video.call("default", callId).getOrCreate({
       data: {
@@ -55,8 +62,14 @@ export async function createSession(req, res) {
 
     res.status(201).json({ session });
   } catch (error) {
-    console.log("Error in createSession controller:", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("--- SESSION CREATION ERROR ---");
+    console.error("Message:", error.message);
+    if (error.response) {
+      console.error("Response Data:", error.response.data);
+    }
+    console.error("Stack:", error.stack);
+    console.error("------------------------------");
+    res.status(500).json({ message: error.message || "Internal Server Error" });
   }
 }
 
