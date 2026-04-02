@@ -1,7 +1,7 @@
 import { useUser } from "@clerk/clerk-react";
-import { ArrowRightIcon, SparklesIcon, ZapIcon } from "lucide-react";
+import { ArrowRightIcon, SparklesIcon, ZapIcon, LogIn } from "lucide-react";
 
-function WelcomeSection({ onCreateSession }) {
+function WelcomeSection({ onCreateSession, onJoinSession }) {
   const { user } = useUser();
 
   return (
@@ -21,16 +21,27 @@ function WelcomeSection({ onCreateSession }) {
               Ready to level up your coding skills?
             </p>
           </div>
-          <button
-            onClick={onCreateSession}
-            className="group px-8 py-4 bg-gradient-to-r from-primary to-secondary rounded-2xl transition-all duration-200 hover:opacity-90"
-          >
-            <div className="flex items-center gap-3 text-white font-bold text-lg">
-              <ZapIcon className="w-6 h-6" />
-              <span>Create Session</span>
-              <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </button>
+          <div className="flex flex-wrap gap-4">
+            <button
+              onClick={onJoinSession}
+              className="group px-8 py-4 bg-base-100 hover:bg-base-200 border border-primary/20 rounded-2xl transition-all duration-200 hover:scale-[1.02]"
+            >
+              <div className="flex items-center gap-3 text-base-content font-bold text-lg">
+                <LogIn className="w-6 h-6 text-primary" />
+                <span>Join Session</span>
+              </div>
+            </button>
+            <button
+              onClick={onCreateSession}
+              className="group px-8 py-4 bg-gradient-to-r from-primary to-secondary rounded-2xl transition-all duration-200 hover:opacity-90 hover:scale-[1.02] shadow-lg shadow-primary/20"
+            >
+              <div className="flex items-center gap-3 text-white font-bold text-lg">
+                <ZapIcon className="w-6 h-6" />
+                <span>Create Session</span>
+                <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+          </div>
         </div>
       </div>
     </div>

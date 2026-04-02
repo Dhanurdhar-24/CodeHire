@@ -9,11 +9,13 @@ import StatsCards from "../components/StatsCards";
 import ActiveSessions from "../components/ActiveSessions";
 import RecentSessions from "../components/RecentSessions";
 import CreateSessionModal from "../components/CreateSessionModal";
+import JoinSessionModal from "../components/JoinSessionModal";
 
 function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useUser();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
   const [roomConfig, setRoomConfig] = useState({ problem: "", difficulty: "", isCustom: false, customDescription: "" });
   const [createdSessionId, setCreatedSessionId] = useState(null);
 
@@ -54,7 +56,10 @@ function DashboardPage() {
     <>
       <div className="min-h-screen bg-base-300">
         <Navbar />
-        <WelcomeSection onCreateSession={() => setShowCreateModal(true)} />
+        <WelcomeSection
+          onCreateSession={() => setShowCreateModal(true)}
+          onJoinSession={() => setShowJoinModal(true)}
+        />
 
         {/* Grid layout */}
         <div className="container mx-auto px-6 pb-16">
@@ -85,6 +90,11 @@ function DashboardPage() {
         onCreateRoom={handleCreateRoom}
         isCreating={createSessionMutation.isPending}
         createdSessionId={createdSessionId}
+      />
+
+      <JoinSessionModal
+        isOpen={showJoinModal}
+        onClose={() => setShowJoinModal(false)}
       />
     </>
   );
