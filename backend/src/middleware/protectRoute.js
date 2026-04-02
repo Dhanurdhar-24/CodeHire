@@ -17,21 +17,32 @@ export const protectRoute = [
       // if user not found in db, try to sync from clerk (lazy sync)
       if (!user) {
         const clerkUser = await clerkClient.users.getUser(clerkId);
-        const role = clerkUser.unsafeMetadata?.role || "participant";
-        const organization = clerkUser.unsafeMetadata?.organization || "";
-        const isApproved = role === "participant";
-        const approvalToken = role === "interviewer" ? Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) : null;
+        // publicMetadata is set by admin approval; unsafeMetadata is set on signup
+        const pubMeta = clerkUser.publicMetadata || {};
+        const unsafeMeta = clerkUser.unsafeMetadata || {};
+        const role = pubMeta.role || unsafeMeta.role || "participant";
+        const isApproved = pubMeta.isApproved !== undefined ? pubMeta.isApproved : (role === "participant");
+        const organization = unsafeMeta.organization || "";
+        const approvalToken = (role === "interviewer" && !isApproved)
+          ? Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+          : null;
 
-        user = await User.create({
-          clerkId,
-          name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "Unknown",
-          email: clerkUser.emailAddresses[0]?.emailAddress,
-          profileImage: clerkUser.imageUrl,
-          role,
-          organization,
-          isApproved,
-          approvalToken,
-        });
+        user = await User.findOneAndUpdate(
+          { clerkId },
+          {
+            $set: {
+              clerkId,
+              name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "Unknown",
+              email: clerkUser.emailAddresses[0]?.emailAddress,
+              profileImage: clerkUser.imageUrl,
+              role,
+              organization,
+              isApproved,
+              approvalToken,
+            },
+          },
+          { upsert: true, new: true }
+        );
 
         // if interviewer, notify admin (even without webhook)
         if (role === "interviewer") {
