@@ -37,7 +37,11 @@ function ActiveSessions({ sessions, isLoading, isUserInSession }) {
               <LoaderIcon className="size-10 animate-spin text-primary" />
             </div>
           ) : sessions.length > 0 ? (
-            sessions.map((session) => (
+            sessions.map((session) => {
+              const currentProblem = session.problems?.[session.currentProblemIndex ?? 0] || session.problems?.[0];
+              const problemName = currentProblem?.problem || "Unknown Problem";
+              const difficulty = currentProblem?.difficulty || "";
+              return (
               <div
                 key={session._id}
                 className="card bg-base-200 border-2 border-base-300 hover:border-primary/50"
@@ -52,15 +56,14 @@ function ActiveSessions({ sessions, isLoading, isUserInSession }) {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-bold text-lg truncate">{session.problem}</h3>
-                        <span
-                          className={`badge badge-sm ${getDifficultyBadgeClass(
-                            session.difficulty
-                          )}`}
-                        >
-                          {session.difficulty.slice(0, 1).toUpperCase() +
-                            session.difficulty.slice(1)}
-                        </span>
+                        <h3 className="font-bold text-lg truncate">{problemName}</h3>
+                        {difficulty && (
+                          <span
+                            className={`badge badge-sm ${getDifficultyBadgeClass(difficulty)}`}
+                          >
+                            {difficulty.slice(0, 1).toUpperCase() + difficulty.slice(1)}
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-4 text-sm opacity-80">
@@ -91,7 +94,7 @@ function ActiveSessions({ sessions, isLoading, isUserInSession }) {
                   )}
                 </div>
               </div>
-            ))
+            )})
           ) : (
             <div className="text-center py-16">
               <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-3xl flex items-center justify-center">
