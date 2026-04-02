@@ -6,6 +6,16 @@ export async function createSession(req, res) {
     const { problem, difficulty, isCustom, customDescription } = req.body;
     const userId = req.user._id;
     const clerkId = req.user.clerkId;
+    const userRole = req.user.role;
+    const isApproved = req.user.isApproved;
+
+    if (userRole !== "interviewer") {
+      return res.status(403).json({ message: "Only interviewers can create sessions" });
+    }
+
+    if (!isApproved) {
+      return res.status(403).json({ message: "Your account is pending approval. Please wait for the admin to verify you." });
+    }
 
     if (!problem || !difficulty) {
       return res.status(400).json({ message: "Problem and difficulty are required" });
@@ -19,7 +29,12 @@ export async function createSession(req, res) {
     const callId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
     // create session in db
-    const session = await Session.create({ problem, difficulty, isCustom, customDescription, host: userId, callId });
+    const session = await Session.create({ 
+      problems: [{ problem, difficulty, isCustom, customDescription }], 
+      host: userId, 
+      callId,
+      currentProblemIndex: 0 
+    });
 
     // create stream video call
     await streamClient.video.call("default", callId).getOrCreate({
@@ -168,6 +183,62 @@ export async function endSession(req, res) {
     res.status(200).json({ session, message: "Session ended successfully" });
   } catch (error) {
     console.log("Error in endSession controller:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function addProblemToSession(req, res) {
+  try {
+    const { id } = req.params;
+    const { problem, difficulty, isCustom, customDescription } = req.body;
+    const userId = req.user._id;
+
+    const session = await Session.findById(id);
+    if (!session) return res.status(404).json({ message: "Session not found" });
+
+    if (session.host.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Only the host can add problems" });
+    }
+
+    if (!problem || !difficulty) {
+      return res.status(400).json({ message: "Problem and difficulty are required" });
+    }
+
+    session.problems.push({ problem, difficulty, isCustom, customDescription });
+    // auto-switch to the new problem
+    session.currentProblemIndex = session.problems.length - 1;
+    await session.save();
+
+    res.status(200).json({ session });
+  } catch (error) {
+    console.log("Error in addProblemToSession controller:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function switchProblem(req, res) {
+  try {
+    const { id } = req.params;
+    const { index } = req.body;
+    const userId = req.user._id;
+
+    const session = await Session.findById(id);
+    if (!session) return res.status(404).json({ message: "Session not found" });
+
+    if (session.host.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Only the host can switch problems" });
+    }
+
+    if (index < 0 || index >= session.problems.length) {
+      return res.status(400).json({ message: "Invalid problem index" });
+    }
+
+    session.currentProblemIndex = index;
+    await session.save();
+
+    res.status(200).json({ session });
+  } catch (error) {
+    console.log("Error in switchProblem controller:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 }

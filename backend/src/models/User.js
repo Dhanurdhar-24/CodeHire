@@ -20,6 +20,23 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    role: {
+      type: String,
+      enum: ["participant", "interviewer"],
+      default: "participant",
+    },
+    organization: {
+      type: String,
+    },
+    isApproved: {
+      type: Boolean,
+      default: function () {
+        return this.role === "participant";
+      },
+    },
+    approvalToken: {
+      type: String,
+    },
   },
   { timestamps: true } // createdAt, updatedAt
 );

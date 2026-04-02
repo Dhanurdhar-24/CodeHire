@@ -1,6 +1,7 @@
 import { clerkClient, requireAuth } from "@clerk/express";
 import User from "../models/User.js";
 import { upsertStreamUser } from "../lib/stream.js";
+import { inngest } from "../lib/inngest.js";
 
 export const protectRoute = [
   requireAuth(),
@@ -16,13 +17,36 @@ export const protectRoute = [
       // if user not found in db, try to sync from clerk (lazy sync)
       if (!user) {
         const clerkUser = await clerkClient.users.getUser(clerkId);
+        const role = clerkUser.unsafeMetadata?.role || "participant";
+        const organization = clerkUser.unsafeMetadata?.organization || "";
+        const isApproved = role === "participant";
+        const approvalToken = role === "interviewer" ? Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) : null;
 
         user = await User.create({
           clerkId,
           name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "Unknown",
           email: clerkUser.emailAddresses[0]?.emailAddress,
           profileImage: clerkUser.imageUrl,
+          role,
+          organization,
+          isApproved,
+          approvalToken,
         });
+
+        // if interviewer, notify admin (even without webhook)
+        if (role === "interviewer") {
+          await inngest.send({
+            name: "email/send-approval",
+            data: {
+              clerkId,
+              email: user.email,
+              name: user.name,
+              organization: user.organization,
+              approvalToken,
+            },
+          });
+          console.log(`Lazy sync triggered approval email for: ${user.name}`);
+        }
 
         // sync to stream as well
         await upsertStreamUser({

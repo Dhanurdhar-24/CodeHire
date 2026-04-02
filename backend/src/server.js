@@ -10,6 +10,8 @@ import { inngest, functions } from "./lib/inngest.js";
 
 import chatRoutes from "./routes/chatRoutes.js";
 import sessionRoutes from "./routes/sessionRoute.js";
+import adminRoutes from "./routes/adminRoute.js";
+import userRoutes from "./routes/userRoute.js";
 
 const app = express();
 
@@ -24,6 +26,8 @@ app.use(clerkMiddleware()); // this adds auth field to request object: req.auth(
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/chat", chatRoutes);
 app.use("/api/sessions", sessionRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/users", userRoutes);
 
 // Standard API health check
 app.get("/", (req, res) => {

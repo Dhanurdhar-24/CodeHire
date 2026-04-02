@@ -2,22 +2,30 @@ import mongoose from "mongoose";
 
 const sessionSchema = new mongoose.Schema(
   {
-    problem: {
-      type: String,
-      required: true,
-    },
-    difficulty: {
-      type: String,
-      enum: ["easy", "medium", "hard"],
-      required: true,
-    },
-    isCustom: {
-      type: Boolean,
-      default: false,
-    },
-    customDescription: {
-      type: String,
-      default: "",
+    problems: [
+      {
+        problem: {
+          type: String,
+          required: true,
+        },
+        difficulty: {
+          type: String,
+          enum: ["easy", "medium", "hard"],
+          required: true,
+        },
+        isCustom: {
+          type: Boolean,
+          default: false,
+        },
+        customDescription: {
+          type: String,
+          default: "",
+        },
+      },
+    ],
+    currentProblemIndex: {
+      type: Number,
+      default: 0,
     },
     host: {
       type: mongoose.Schema.Types.ObjectId,

@@ -7,6 +7,8 @@ import {
   getMyRecentSessions,
   getSessionById,
   joinSession,
+  addProblemToSession,
+  switchProblem,
 } from "../controllers/sessionController.js";
 
 const router = express.Router();
@@ -18,5 +20,7 @@ router.get("/my-recent", protectRoute, getMyRecentSessions);
 router.get("/:id", protectRoute, getSessionById);
 router.post("/:id/join", protectRoute, joinSession);
 router.post("/:id/end", protectRoute, endSession);
+router.post("/:id/problems", protectRoute, addProblemToSession);
+router.patch("/:id/switch-problem", protectRoute, switchProblem);
 
 export default router;

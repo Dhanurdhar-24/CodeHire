@@ -10,16 +10,21 @@ import ActiveSessions from "../components/ActiveSessions";
 import RecentSessions from "../components/RecentSessions";
 import CreateSessionModal from "../components/CreateSessionModal";
 import JoinSessionModal from "../components/JoinSessionModal";
+import BecomeInterviewerModal from "../components/BecomeInterviewerModal";
+import { Loader2Icon } from "lucide-react";
+import { useConvertToInterviewer } from "../hooks/useUsers";
 
 function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useUser();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showBecomeInterviewerModal, setShowBecomeInterviewerModal] = useState(false);
   const [roomConfig, setRoomConfig] = useState({ problem: "", difficulty: "", isCustom: false, customDescription: "" });
   const [createdSessionId, setCreatedSessionId] = useState(null);
 
   const createSessionMutation = useCreateSession();
+  const convertToInterviewerMutation = useConvertToInterviewer();
 
   const { data: activeSessionsData, isLoading: loadingActiveSessions } = useActiveSessions();
   const { data: recentSessionsData, isLoading: loadingRecentSessions } = useMyRecentSessions();
@@ -43,6 +48,12 @@ function DashboardPage() {
     );
   };
 
+  const handleBecomeInterviewer = (organization) => {
+    convertToInterviewerMutation.mutate({ organization }, {
+      onSuccess: () => setShowBecomeInterviewerModal(false)
+    });
+  };
+
   const activeSessions = activeSessionsData?.sessions || [];
   const recentSessions = recentSessionsData?.sessions || [];
 
@@ -55,11 +66,26 @@ function DashboardPage() {
   return (
     <>
       <div className="min-h-screen bg-base-300">
-        <Navbar />
+        <Navbar onBecomeInterviewer={() => setShowBecomeInterviewerModal(true)} />
         <WelcomeSection
           onCreateSession={() => setShowCreateModal(true)}
           onJoinSession={() => setShowJoinModal(true)}
+          onBecomeInterviewer={() => setShowBecomeInterviewerModal(true)}
         />
+
+        {user?.publicMetadata?.role === "interviewer" && !user?.publicMetadata?.isApproved && (
+          <div className="container mx-auto px-6 mb-8">
+            <div className="alert alert-warning bg-warning/10 border-warning/20 rounded-2xl flex flex-col sm:flex-row items-center gap-4 p-6 shadow-lg shadow-warning/5">
+              <div className="size-12 rounded-xl bg-warning/20 flex items-center justify-center shrink-0">
+                <Loader2Icon className="size-6 text-warning animate-spin" />
+              </div>
+              <div className="text-center sm:text-left">
+                <h3 className="text-xl font-bold text-warning">Verification Pending</h3>
+                <p className="text-warning/80">Please standby as you are being verified by our team. You'll be able to create sessions once approved.</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Grid layout */}
         <div className="container mx-auto px-6 pb-16">
@@ -95,6 +121,13 @@ function DashboardPage() {
       <JoinSessionModal
         isOpen={showJoinModal}
         onClose={() => setShowJoinModal(false)}
+      />
+
+      <BecomeInterviewerModal
+        isOpen={showBecomeInterviewerModal}
+        onClose={() => setShowBecomeInterviewerModal(false)}
+        onConvert={handleBecomeInterviewer}
+        isSubmitting={convertToInterviewerMutation.isPending}
       />
     </>
   );

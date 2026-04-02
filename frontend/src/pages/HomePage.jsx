@@ -33,13 +33,21 @@ function HomePage() {
             </div>
           </Link>
 
-          {/* AUTH BTN */}
-          <SignInButton mode="modal">
-            <button className="group px-6 py-3 bg-gradient-to-r from-primary to-secondary rounded-xl text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2">
-              <span>Get Started</span>
-              <ArrowRightIcon className="size-4 group-hover:translate-x-0.5 transition-transform" />
-            </button>
-          </SignInButton>
+          {/* AUTH BTNS */}
+          <div className="flex items-center gap-4">
+            <Link 
+              to="/interviewer/signup" 
+              className="text-sm font-semibold hover:text-primary transition-colors pr-4 border-r border-base-content/10 hidden sm:block"
+            >
+              For Interviewers
+            </Link>
+            <SignInButton mode="modal">
+              <button className="group px-6 py-3 bg-gradient-to-r from-primary to-secondary rounded-xl text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 flex items-center gap-2">
+                <span>Get Started</span>
+                <ArrowRightIcon className="size-4 group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            </SignInButton>
+          </div>
         </div>
       </nav>
 

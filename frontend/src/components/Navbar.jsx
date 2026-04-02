@@ -1,8 +1,9 @@
 import { Link, useLocation } from "react-router";
 import { BookOpenIcon, LayoutDashboardIcon, BriefcaseIcon } from "lucide-react";
-import { UserButton } from "@clerk/clerk-react";
+import { UserButton, useUser } from "@clerk/clerk-react";
 
-function Navbar() {
+function Navbar({ onBecomeInterviewer }) {
+  const { user } = useUser();
   const location = useLocation();
 
   console.log(location);
@@ -67,7 +68,17 @@ function Navbar() {
           </Link>
 
           <div className="ml-4 mt-2">
-            <UserButton />
+            <UserButton>
+              {(!user?.publicMetadata?.role || user?.publicMetadata?.role === "participant") && (
+                <UserButton.MenuItems>
+                  <UserButton.Action
+                    label="Become an Interviewer"
+                    labelIcon={<BriefcaseIcon className="size-4" />}
+                    onClick={onBecomeInterviewer}
+                  />
+                </UserButton.MenuItems>
+              )}
+            </UserButton>
           </div>
         </div>
       </div>

@@ -63,3 +63,25 @@ export const useEndSession = () => {
 
   return result;
 };
+
+export const useAddProblemToSession = () => {
+  const result = useMutation({
+    mutationKey: ["addProblem"],
+    mutationFn: ({ id, data }) => sessionApi.addProblemToSession(id, data),
+    onSuccess: () => toast.success("New problem added!"),
+    onError: (error) => toast.error(error.response?.data?.message || "Failed to add problem"),
+  });
+
+  return result;
+};
+
+export const useSwitchProblem = () => {
+  const result = useMutation({
+    mutationKey: ["switchProblem"],
+    mutationFn: ({ id, index }) => sessionApi.switchProblem(id, index),
+    onSuccess: () => toast.success("Switched problem"),
+    onError: (error) => toast.error(error.response?.data?.message || "Failed to switch problem"),
+  });
+
+  return result;
+};

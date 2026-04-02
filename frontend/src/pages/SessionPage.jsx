@@ -1,19 +1,20 @@
 import { useUser } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { useEndSession, useJoinSession, useSessionById } from "../hooks/useSessions";
+import { useAddProblemToSession, useEndSession, useJoinSession, useSessionById, useSwitchProblem } from "../hooks/useSessions";
 import { PROBLEMS } from "../data/problems";
 import { executeCode } from "../lib/piston";
 import Navbar from "../components/Navbar";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { getDifficultyBadgeClass } from "../lib/utils";
-import { Loader2Icon, LogOutIcon, PhoneOffIcon } from "lucide-react";
+import { Loader2Icon, LogOutIcon, PhoneOffIcon, PlusIcon, ChevronRightIcon, Code2Icon, SparklesIcon } from "lucide-react";
 import CodeEditorPanel from "../components/CodeEditorPanel";
 import OutputPanel from "../components/OutputPanel";
 
 import useStreamClient from "../hooks/useStreamClient";
 import { StreamCall, StreamVideo } from "@stream-io/video-react-sdk";
 import VideoCallUI from "../components/VideoCallUI";
+import AddProblemModal from "../components/AddProblemModal";
 
 function SessionPage() {
   const navigate = useNavigate();
@@ -26,10 +27,17 @@ function SessionPage() {
 
   const joinSessionMutation = useJoinSession();
   const endSessionMutation = useEndSession();
+  const addProblemMutation = useAddProblemToSession();
+  const switchProblemMutation = useSwitchProblem();
+
+  const [showAddProblemModal, setShowAddProblemModal] = useState(false);
+  const [roomConfig, setRoomConfig] = useState({ problem: "", difficulty: "", isCustom: false, customDescription: "" });
 
   const session = sessionData?.session;
   const isHost = session?.host?.clerkId === user?.id;
   const isParticipant = session?.participant?.clerkId === user?.id;
+
+  const currentProblem = session?.problems?.[session?.currentProblemIndex || 0] || session;
 
   const { call, channel, chatClient, isInitializingCall, streamClient } = useStreamClient(
     session,
@@ -38,18 +46,20 @@ function SessionPage() {
     isParticipant
   );
 
-  // find the problem data based on session problem title or build it for custom ones
-  const problemData = session?.isCustom
+  // find the problem data based on current problem title or build it for custom ones
+  const problemData = currentProblem?.isCustom
     ? {
-        title: session.problem,
-        difficulty: session.difficulty,
-        description: { text: session.customDescription, notes: [] },
+        title: currentProblem.problem,
+        difficulty: currentProblem.difficulty,
+        description: { text: currentProblem.customDescription, notes: [] },
         examples: [],
         constraints: [],
         category: "Custom",
         starterCode: { javascript: "// Write your code here" },
       }
-    : (session?.problem ? Object.values(PROBLEMS).find((p) => p.title === session.problem) : null);
+    : currentProblem?.problem
+    ? Object.values(PROBLEMS).find((p) => p.title === currentProblem.problem)
+    : null;
 
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [code, setCode] = useState(problemData?.starterCode?.[selectedLanguage] || "");
@@ -103,6 +113,24 @@ function SessionPage() {
     }
   };
 
+  const handleAddProblem = () => {
+    addProblemMutation.mutate(
+      { id, data: roomConfig },
+      {
+        onSuccess: () => {
+          setShowAddProblemModal(false);
+          setRoomConfig({ problem: "", difficulty: "", isCustom: false, customDescription: "" });
+          refetch();
+        },
+      }
+    );
+  };
+
+  const handleSwitchProblem = (index) => {
+    if (index === session.currentProblemIndex) return;
+    switchProblemMutation.mutate({ id, index }, { onSuccess: refetch });
+  };
+
   return (
     <div className="h-screen bg-base-100 flex flex-col">
       <Navbar />
@@ -120,7 +148,7 @@ function SessionPage() {
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <h1 className="text-3xl font-bold text-base-content">
-                          {session?.problem || "Loading..."}
+                          {currentProblem?.problem || "Loading..."}
                         </h1>
                         {problemData?.category && (
                           <p className="text-base-content/60 mt-1">{problemData.category}</p>
@@ -134,25 +162,36 @@ function SessionPage() {
                       <div className="flex items-center gap-3">
                         <span
                           className={`badge badge-lg ${getDifficultyBadgeClass(
-                            session?.difficulty
+                            currentProblem?.difficulty
                           )}`}
                         >
-                          {session?.difficulty.slice(0, 1).toUpperCase() +
-                            session?.difficulty.slice(1) || "Easy"}
+                          {currentProblem?.difficulty
+                            ? currentProblem.difficulty.slice(0, 1).toUpperCase() +
+                              currentProblem.difficulty.slice(1)
+                            : "Easy"}
                         </span>
                         {isHost && session?.status === "active" && (
-                          <button
-                            onClick={handleEndSession}
-                            disabled={endSessionMutation.isPending}
-                            className="btn btn-error btn-sm gap-2"
-                          >
-                            {endSessionMutation.isPending ? (
-                              <Loader2Icon className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <LogOutIcon className="w-4 h-4" />
-                            )}
-                            End Session
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setShowAddProblemModal(true)}
+                              className="btn btn-primary btn-sm gap-2"
+                            >
+                              <PlusIcon className="w-4 h-4" />
+                              Add Problem
+                            </button>
+                            <button
+                              onClick={handleEndSession}
+                              disabled={endSessionMutation.isPending}
+                              className="btn btn-error btn-sm gap-2"
+                            >
+                              {endSessionMutation.isPending ? (
+                                <Loader2Icon className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <LogOutIcon className="w-4 h-4" />
+                              )}
+                              End Session
+                            </button>
+                          </div>
                         )}
                         {session?.status === "completed" && (
                           <span className="badge badge-ghost badge-lg">Completed</span>
@@ -162,6 +201,25 @@ function SessionPage() {
                   </div>
 
                   <div className="p-6 space-y-6">
+                    {/* Problem List (if multiple) */}
+                    {session?.problems?.length > 1 && (
+                      <div className="flex flex-wrap gap-2 mb-4 p-2 bg-base-300/50 rounded-xl">
+                        {session.problems.map((p, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => isHost && handleSwitchProblem(idx)}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                              idx === session.currentProblemIndex
+                                ? "bg-primary text-primary-content shadow-lg"
+                                : "bg-base-100 hover:bg-base-200 opacity-60 hover:opacity-100"
+                            } ${isHost ? "cursor-pointer" : "cursor-default"}`}
+                          >
+                            Q{idx + 1}: {p.problem}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
                     {/* problem desc */}
                     {problemData?.description && (
                       <div className="bg-base-100 rounded-xl shadow-sm p-5 border border-base-300">
@@ -302,6 +360,15 @@ function SessionPage() {
           </Panel>
         </PanelGroup>
       </div>
+      {/* Modals */}
+      <AddProblemModal
+        isOpen={showAddProblemModal}
+        onClose={() => setShowAddProblemModal(false)}
+        roomConfig={roomConfig}
+        setRoomConfig={setRoomConfig}
+        onAddProblem={handleAddProblem}
+        isAdding={addProblemMutation.isPending}
+      />
     </div>
   );
 }
