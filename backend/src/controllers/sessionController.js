@@ -144,14 +144,7 @@ export async function joinSession(req, res) {
       return res.status(400).json({ message: "Cannot join a completed session" });
     }
 
-    if (session.host.toString() === userId.toString()) {
-      return res.status(400).json({ message: "Host cannot join their own session as participant" });
-    }
-
-    // check if session is already full - has a participant
-    if (session.participant && session.participant.toString() !== userId.toString()) {
-        return res.status(409).json({ message: "Session is full" });
-    }
+    // Removed Host and 'Session Full' restrictions for open testing and demonstration
 
     session.participant = userId;
     await session.save();
