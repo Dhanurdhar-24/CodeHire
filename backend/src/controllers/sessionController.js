@@ -3,7 +3,9 @@ import Session from "../models/Session.js";
 
 export async function createSession(req, res) {
   try {
-    const { problem, difficulty, isCustom, customDescription } = req.body;
+    let { problem, difficulty, isCustom, customDescription } = req.body;
+    difficulty = difficulty?.toLowerCase();
+    
     const userId = req.user._id;
     const clerkId = req.user.clerkId;
     const userRole = req.user.role;
@@ -212,7 +214,9 @@ export async function endSession(req, res) {
 export async function addProblemToSession(req, res) {
   try {
     const { id } = req.params;
-    const { problem, difficulty, isCustom, customDescription } = req.body;
+    let { problem, difficulty, isCustom, customDescription } = req.body;
+    difficulty = difficulty?.toLowerCase();
+
     const userId = req.user._id;
 
     const session = await Session.findById(id);
