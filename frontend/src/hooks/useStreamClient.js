@@ -16,6 +16,9 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
     // If session hasn't loaded yet, keep waiting
     if (loadingSession || !session) return;
 
+    // Wait until user actually joined the session in DB
+    if (!isHost && !isParticipant) return;
+
     // If already initialized, don't re-initialize
     if (initialized.current) return;
 
@@ -88,7 +91,7 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
         }
       })();
     };
-  }, [session?.callId, loadingSession]);
+  }, [session?.callId, loadingSession, isHost, isParticipant]);
 
   return { streamClient, call, chatClient, channel, isInitializingCall };
 }

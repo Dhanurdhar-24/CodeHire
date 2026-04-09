@@ -148,10 +148,19 @@ export async function joinSession(req, res) {
     }
 
     // check if session is already full - has a participant
-    if (session.participant) return res.status(409).json({ message: "Session is full" });
+    if (session.participant && session.participant.toString() !== userId.toString()) {
+        return res.status(409).json({ message: "Session is full" });
+    }
 
     session.participant = userId;
     await session.save();
+
+    // Ensure the participant is synced with Stream using the imported upsertStreamUser
+    await upsertStreamUser({
+      id: clerkId,
+      name: req.user.name,
+      image: req.user.profileImage,
+    });
 
     const channel = chatClient.channel("messaging", session.callId);
     await channel.addMembers([clerkId]);
