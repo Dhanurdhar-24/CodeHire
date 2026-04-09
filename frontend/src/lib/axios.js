@@ -1,5 +1,11 @@
 import axios from "axios";
 
+let authTokenGetter = null;
+
+export const setAuthTokenGetter = (getter) => {
+  authTokenGetter = getter;
+};
+
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
@@ -21,7 +27,9 @@ axiosInstance.interceptors.response.use(
 // Attach Clerk JWT for cross-domain requests (Vercel frontend → Render backend)
 axiosInstance.interceptors.request.use(async (config) => {
   try {
-    const token = await window.Clerk?.session?.getToken();
+    const token = authTokenGetter
+      ? await authTokenGetter()
+      : await window.Clerk?.session?.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
