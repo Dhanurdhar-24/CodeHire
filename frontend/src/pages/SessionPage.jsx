@@ -22,6 +22,7 @@ function SessionPage() {
   const { user } = useUser();
   const [output, setOutput] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [hasJoinedSession, setHasJoinedSession] = useState(false);
 
   const { data: sessionData, isLoading: loadingSession, refetch } = useSessionById(id);
 
@@ -36,6 +37,7 @@ function SessionPage() {
   const session = sessionData?.session;
   const isHost = session?.host?.clerkId === user?.id;
   const isParticipant = session?.participant?.clerkId === user?.id;
+  const canJoinCall = isHost || isParticipant || hasJoinedSession;
 
   const currentProblem = session?.problems?.[session?.currentProblemIndex || 0] || session;
 
@@ -43,7 +45,7 @@ function SessionPage() {
     session,
     loadingSession,
     isHost,
-    isParticipant
+    canJoinCall
   );
 
   const isJoinError = joinSessionMutation.isError;
@@ -71,14 +73,22 @@ function SessionPage() {
   // auto-join session if user is not already a participant and not the host
   useEffect(() => {
     if (!session || !user || loadingSession) return;
-    if (isHost || isParticipant) return;
+    if (isHost || isParticipant || hasJoinedSession) return;
     if (joinAttempted.current) return;
 
     joinAttempted.current = true;
-    joinSessionMutation.mutate(id, { onSuccess: refetch });
+    joinSessionMutation.mutate(id, {
+      onSuccess: async () => {
+        setHasJoinedSession(true);
+        await refetch();
+      },
+      onError: () => {
+        joinAttempted.current = false;
+      },
+    });
 
     // remove the joinSessionMutation, refetch from dependencies to avoid infinite loop
-  }, [session, user, loadingSession, isHost, isParticipant, id]);
+  }, [session, user, loadingSession, isHost, isParticipant, hasJoinedSession, id, refetch, joinSessionMutation]);
 
   // redirect the "participant" when session ends
   useEffect(() => {

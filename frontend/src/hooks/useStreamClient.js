@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { initializeStreamClient, disconnectStreamClient } from "../lib/stream";
 import { sessionApi } from "../api/sessions";
 
-function useStreamClient(session, loadingSession, isHost, isParticipant) {
+function useStreamClient(session, loadingSession, isHost, canJoinCall) {
   const [streamClient, setStreamClient] = useState(null);
   const [call, setCall] = useState(null);
   const [chatClient, setChatClient] = useState(null);
@@ -17,7 +17,7 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
     if (loadingSession || !session) return;
 
     // Wait until user actually joined the session in DB
-    if (!isHost && !isParticipant) return;
+    if (!isHost && !canJoinCall) return;
 
     // If already initialized, don't re-initialize
     if (initialized.current) return;
@@ -52,7 +52,7 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
         setStreamClient(client);
 
         videoCall = client.call("default", session.callId);
-        await videoCall.join({ create: true });
+        await videoCall.join();
         setCall(videoCall);
         console.log("Joined video call:", session.callId);
 
@@ -91,7 +91,7 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
         }
       })();
     };
-  }, [session?.callId, loadingSession, isHost, isParticipant]);
+  }, [session?.callId, loadingSession, isHost, canJoinCall, session?.status]);
 
   return { streamClient, call, chatClient, channel, isInitializingCall };
 }

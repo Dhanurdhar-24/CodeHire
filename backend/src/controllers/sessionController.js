@@ -49,6 +49,7 @@ export async function createSession(req, res) {
     await streamClient.video.call("default", callId).getOrCreate({
       data: {
         created_by_id: clerkId,
+        members: [{ user_id: clerkId }],
         custom: { problem, difficulty, sessionId: session._id.toString() },
       },
     });
@@ -154,6 +155,11 @@ export async function joinSession(req, res) {
       id: clerkId,
       name: req.user.name,
       image: req.user.profileImage,
+    });
+
+    const call = streamClient.video.call("default", session.callId);
+    await call.updateCallMembers({
+      update_members: [{ user_id: clerkId }],
     });
 
     const channel = chatClient.channel("messaging", session.callId);
