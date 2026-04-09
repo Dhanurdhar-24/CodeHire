@@ -5,6 +5,19 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error(
+      "==== BACKEND CRASHED ====\nRoute: " + error.config?.url +
+      "\nStatus: " + error.response?.status +
+      "\nError Message from Server: ",
+      error.response?.data || error.message
+    );
+    return Promise.reject(error);
+  }
+);
+
 // Attach Clerk JWT for cross-domain requests (Vercel frontend → Render backend)
 axiosInstance.interceptors.request.use(async (config) => {
   try {
