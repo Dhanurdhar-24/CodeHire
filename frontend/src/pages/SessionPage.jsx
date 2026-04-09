@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/clerk-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useAddProblemToSession, useEndSession, useJoinSession, useSessionById, useSwitchProblem } from "../hooks/useSessions";
 import { PROBLEMS } from "../data/problems";
