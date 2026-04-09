@@ -168,8 +168,10 @@ export async function joinSession(req, res) {
 
     res.status(200).json({ session });
   } catch (error) {
-    console.log("Error in joinSession controller:", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("--- JOIN SESSION ERROR ---");
+    console.error(error);
+    if (error.response) console.error(error.response.data);
+    res.status(500).json({ message: error.message || "Internal Server Error" });
   }
 }
 
