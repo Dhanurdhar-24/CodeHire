@@ -46,6 +46,8 @@ function SessionPage() {
     isParticipant
   );
 
+  const isJoinError = joinSessionMutation.isError;
+
   // find the problem data based on current problem title or build it for custom ones
   const problemData = currentProblem?.isCustom
     ? {
@@ -323,7 +325,24 @@ function SessionPage() {
           {/* RIGHT PANEL - VIDEO CALLS & CHAT */}
           <Panel defaultSize={50} minSize={30}>
             <div className="h-full bg-base-200 p-4 overflow-auto">
-              {isInitializingCall ? (
+              {isJoinError ? (
+                <div className="h-full flex items-center justify-center">
+                  <div className="card bg-base-100 shadow-xl max-w-md">
+                    <div className="card-body items-center text-center">
+                      <div className="w-24 h-24 bg-error/10 rounded-full flex items-center justify-center mb-4">
+                        <PhoneOffIcon className="w-12 h-12 text-error" />
+                      </div>
+                      <h2 className="card-title text-2xl text-error">Failed to Join Session</h2>
+                      <p className="text-base-content/70">
+                        {joinSessionMutation.error?.response?.data?.message || "An unknown error occurred while joining"}
+                      </p>
+                      <button onClick={() => navigate("/dashboard")} className="btn btn-primary mt-4">
+                        Return to Dashboard
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : isInitializingCall ? (
                 <div className="h-full flex items-center justify-center">
                   <div className="text-center">
                     <Loader2Icon className="w-12 h-12 mx-auto animate-spin text-primary mb-4" />

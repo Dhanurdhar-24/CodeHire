@@ -167,6 +167,10 @@ export async function joinSession(req, res) {
     const channel = chatClient.channel("messaging", session.callId);
     await channel.addMembers([clerkId]);
 
+    // Also add them as a member to the stream video call explicitly
+    const videoCall = streamClient.video.call("default", session.callId);
+    await videoCall.updateCallMembers({ update_members: [{ user_id: clerkId }] });
+
     res.status(200).json({ session });
   } catch (error) {
     console.log("Error in joinSession controller:", error.message);
